@@ -50,8 +50,41 @@ V_end = np.power(2 * W_end/(rho * C_L_opt * S), 0.5)
 print(f"Initial velocity : {V_init} m/s = {V_init * 3.6} km/h")
 print(f"Final velocity : {V_end} m/s = {V_end * 3.6} km/h")
 
-print()
+#----LOAD FACTOR----
+W = (m + 4000)*g
+V_star = np.sqrt(2 * n_max * W/(S * rho * C_L_max))
 
+print(f'Critical velocity : {V_star} m/s = {3.6 * V_star} km/h')
+
+V_1 = np.linspace(0, V_star)
+V_2 = np.linspace(V_star, 1.5 * V_star)
+
+n_1 = 0.5 * rho * V_1**2 * C_L_max * S/W
+n_2 = n_max * np.ones_like(V_2)
+
+fig, ax = plt.subplots(1, 1, figsize=(10, 9))
+ax.plot(V_1, n_1, 'k', label='Stall limit')
+ax.plot(V_2, n_2, 'k--', label='Structural limit')
+ax.grid()
+ax.set_title("Flight envelope")
+ax.set_xlabel("V")
+ax.set_ylabel("n")
+ax.scatter(V_star,n_max, c='r', label='Critical velocity')
+ax.legend()
+# fig.savefig('Homework1/images/flight_env.eps', format='eps')
+
+
+#----TURNING RADIUS----
+R_min_1 = 2 * n_max * W/(S * rho * C_L_max * (n_max + 1) * g)
+
+print(f"R_min_1 = {R_min_1}")
+
+R_min_2 = 2 * n_max * W/(S * rho * C_L_max * (n_max - 1) * g)
+
+print(f"R_min_2 = {R_min_2}")
+
+
+print()
 
 # ------ QUESTION 2 -----
 print("------ Answers for question 2 ------")
@@ -69,6 +102,7 @@ e = 0.83
 C_D_0 = 0.0229
 S_t = 2.9
 b_t = 3.25
+c_bar_t = S_t/b_t
 h_nt = 2.74
 CL_t_a = 4.06
 C_mac_t = 0
@@ -76,6 +110,9 @@ i_t = 0
 eps_0 = 0.035797
 deps_da = 0.48833
 CL_t_deps = 2.436
+
+AR = b*b/S                 
+k = 1./(np.pi * e * AR)     
 
 #----STATIC MARGIN----
 V_H_old = (h_nt + h - h_nw) * S_t/S
@@ -97,10 +134,9 @@ K = ((h_n_old - h_nw) * a_new - V_H_new * CL_t_a * (1 - deps_da))/(CL_t_deps * (
 print(f"K = {K}")
 
 #----C_trim plot----
-alpha_trim = np.linspace(0, np.radians(20))
-C_m_inf = C_mac_w + V_H_old * CL_t_a * (i_t + eps_0) * (1 - CL_t_a*S_t/(a_old * S) * (1 - deps_da))
-denom = a_old * CL_t_deps * (S_t/S * (h_n_old - h_nw) - V_H_old)
-C_L_trim = (-S_t/S * C_m_inf + denom/CL_t_deps * alpha_trim)/(S_t/S * (h - h_nw) - V_H_old)
+alpha_trim = np.linspace(-np.radians(5), np.radians(10), num=2)
+C_m_inf = C_mac_w + V_H_old * CL_t_a * (i_t + eps_0) * (1 - (CL_t_a * S_t)/(a_old * S) * (1 - deps_da))
+C_L_trim = (a_old * alpha_trim * ((h_n_old - h_nw) * S_t/S - V_H_old) - S_t/S * C_m_inf)/((h - h_nw) * S_t/S - V_H_old)
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 9))
 ax.grid()
@@ -109,17 +145,19 @@ ax.plot(np.degrees(alpha_trim), alpha_trim * a_old, 'k--', label = 'untrimmed')
 ax.legend()
 ax.set_xlabel(r'$\alpha_{trim}$ [°]', size=12)
 ax.set_ylabel(r'$C_L$', size=12)
+fig.suptitle('Trimmed curve')
+# fig.savefig('Homework1/images/trimmed_curve.eps', format='eps')
 
 #----MAX RANGE----
+denom = a_old * CL_t_deps * ((h_n_old - h_nw) * S_t/S - V_H_old)
 C_L_opt = np.sqrt(C_D_0/(3 * k))
 V = np.sqrt(2 * g * m_gross/(rho * C_L_opt * S))
 alpha_opt = np.degrees((CL_t_deps * (S_t/S * (h - h_nw) - V_H_old) * C_L_opt + S_t/S * CL_t_deps * C_m_inf)/denom)
-delta_e_opt = -a_old * (C_m_inf + (h - h_n_old) * C_L_opt)/denom
+delta_e_opt = np.degrees(-a_old * (C_m_inf + (h - h_n_old) * C_L_opt)/denom)
 
 print(f'Optimal AoA = {alpha_opt}')
 print(f'Optimal EAS : {V} m/s = {3.6 * V} km/h')
 print(f'Optimal aileron deflection : {delta_e_opt}')
 
 
-
-# plt.show()
+plt.show()
